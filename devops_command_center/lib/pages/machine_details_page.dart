@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../main.dart';
 import '../models/machine.dart';
+import '../services/machine_provider.dart';
 
 class MachineDetailsPage extends StatefulWidget {
   final int id;

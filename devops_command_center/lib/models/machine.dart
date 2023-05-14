@@ -13,13 +13,25 @@ class Machine {
     required this.version,
   });
 
+  // Konwersja z JSON na obiekt Machine
   factory Machine.fromJson(Map<String, dynamic> json) {
     return Machine(
       id: json['id'],
       name: json['name'],
       description: json['description'],
-      commands: List<String>.from(json['commands'].map((x) => x)),
+      commands: List<String>.from(json['commands']),
       version: json['version'],
     );
+  }
+  
+   // Konwersja obiektu Machine na JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'commands': commands,
+      'version': version,
+    };
   }
 }
