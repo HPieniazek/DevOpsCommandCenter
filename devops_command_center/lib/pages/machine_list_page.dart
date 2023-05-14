@@ -1,27 +1,45 @@
-import 'package:devops_command_center/pages/machine_details_page.dart';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart';
-import 'package:devops_command_center/pages/machine_details_page.dart';
+import 'package:provider/provider.dart';
+import '../main.dart';
+import '../models/machine.dart';
+import 'machine_details_page.dart';
 
-import '../wigets/navigation_bar.dart';
+class MachineListPage extends StatefulWidget {
+  @override
+  _MachineListPageState createState() => _MachineListPageState();
+}
 
-class MachineListPage extends StatelessWidget {
+class _MachineListPageState extends State<MachineListPage> {
   @override
   Widget build(BuildContext context) {
+    var machines = Provider.of<MachineProvider>(context).machines;
+
     return Scaffold(
       appBar: AppBar(title: Text('Machines')),
       body: ListView.builder(
-        itemCount: 10,
+        itemCount: machines.length,
         itemBuilder: (context, index) {
           return ListTile(
-            title: Text('Machine ${index + 1}'),
+            title: Text(machines[index].name),
+            trailing: IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: () {
+                Provider.of<MachineProvider>(context, listen: false).deleteMachine(machines[index].id);
+              },
+            ),
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => MachineDetailsPage(title: 'Machine ${index + 1}'), // Przekaż wartość 'title' do 'MachineDetailsPage'
+                  builder: (context) => MachineDetailsPage(
+                    id: machines[index].id,
+                    name: machines[index].name,
+                    description: machines[index].description,
+                    commands: machines[index].commands,
+                    version: machines[index].version,
+                  ),
                 ),
               );
             },
@@ -30,9 +48,18 @@ class MachineListPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () {},
+        onPressed: () {
+          Provider.of<MachineProvider>(context, listen: false).addMachine(
+            Machine(
+              id: Random().nextInt(1000),
+              name: 'New Machine',
+              description: 'This is a new machine',
+              commands: ['command1', 'command2'],
+              version: '1.0.0',
+            ),
+          );
+        },
       ),
-      bottomNavigationBar: CustomNavigationBar(),
     );
   }
 }

@@ -1,186 +1,163 @@
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:provider/provider.dart';
 
-import '../wigets/navigation_bar.dart';
+import '../main.dart';
+import '../models/machine.dart';
 
+class MachineDetailsPage extends StatefulWidget {
+  final int id;
+  String name;
+  String description;
+  List<String> commands;
+  String version;
 
-class MachineDetailsPage extends StatelessWidget {
-  final String title;
+  MachineDetailsPage({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.commands,
+    required this.version,
+  });
 
-  MachineDetailsPage({required this.title});
+  @override
+  _MachineDetailsPageState createState() => _MachineDetailsPageState();
+}
+
+class _MachineDetailsPageState extends State<MachineDetailsPage> {
+  late TextEditingController _nameController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _versionController;
+  late TextEditingController _commandController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.name);
+    _descriptionController = TextEditingController(text: widget.description);
+    _versionController = TextEditingController(text: widget.version);
+    _commandController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _versionController.dispose();
+    _commandController.dispose();
+    super.dispose();
+  }
+
+  void _updateMachine() {
+    var updatedMachine = Machine(
+      id: widget.id,
+      name: _nameController.text,
+      description: _descriptionController.text,
+      commands: widget.commands,
+      version: _versionController.text,
+    );
+
+    Provider.of<MachineProvider>(context, listen: false).updateMachine(updatedMachine);
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
-      body: Column(
-        children: [
-          const Expanded(flex: 2, child: _TopPortion()),
-          Expanded(
-            flex: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
+      appBar: AppBar(
+        title: Text(widget.name),
+        centerTitle: true,
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.save),
+            onPressed: _updateMachine,
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'ID: ${widget.id}',
+              style: Theme.of(context).textTheme.headline6,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Name:',
+              style: Theme.of(context).textTheme.subtitle1,
+            ),
+            TextFormField(
+              controller: _nameController,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Description:',
+              style: Theme.of(context).textTheme.subtitle1,
+            ),
+            TextFormField(
+              controller: _descriptionController,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Commands:',
+              style: Theme.of(context).textTheme.subtitle1,
+            ),
+            ...widget.commands.map((command) {
+              final commandController = TextEditingController(text: command);
+              return Row(
                 children: [
-                  Text(
-                    this.title,
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline6
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                  Expanded(
+                    child: TextFormField(
+                      controller: commandController,
+                      onChanged: (value) {
+                        command = value;
+                      },
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      FloatingActionButton.extended(
-                        onPressed: () {},
-                        heroTag: 'follow',
-                        elevation: 0,
-                        label: const Text("Follow"),
-                        icon: const Icon(Icons.person_add_alt_1),
-                      ),
-                      const SizedBox(width: 16.0),
-                      FloatingActionButton.extended(
-                        onPressed: () {},
-                        heroTag: 'mesage',
-                        elevation: 0,
-                        backgroundColor: Colors.red,
-                        label: const Text("Message"),
-                        icon: const Icon(Icons.message_rounded),
-                      ),
-                    ],
+                  IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () {
+                      setState(() {
+                        widget.commands.remove(command);
+                      });
+                    },
                   ),
-                  const SizedBox(height: 16),
-                  const _ProfileInfoRow()
                 ],
-              ),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: CustomNavigationBar(),
-    );
-  }
-}
-
-class _ProfileInfoRow extends StatelessWidget {
-  const _ProfileInfoRow({Key? key}) : super(key: key);
-
-  final List<ProfileInfoItem> _items = const [
-    ProfileInfoItem("Posts", 900),
-    ProfileInfoItem("Followers", 120),
-    ProfileInfoItem("Following", 200),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 80,
-      constraints: const BoxConstraints(maxWidth: 400),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: _items
-            .map((item) => Expanded(
-                    child: Row(
-                  children: [
-                    if (_items.indexOf(item) != 0) const VerticalDivider(),
-                    Expanded(child: _singleItem(context, item)),
-                  ],
-                )))
-            .toList(),
-      ),
-    );
-  }
-
-  Widget _singleItem(BuildContext context, ProfileInfoItem item) => Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              item.value.toString(),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-          ),
-          Text(
-            item.title,
-            style: Theme.of(context).textTheme.caption,
-          )
-        ],
-      );
-}
-
-class ProfileInfoItem {
-  final String title;
-  final int value;
-  const ProfileInfoItem(this.title, this.value);
-}
-
-class _TopPortion extends StatelessWidget {
-  const _TopPortion({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: 50),
-          decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [Color(0xff0043ba), Color(0xff006df1)]),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(50),
-                bottomRight: Radius.circular(50),
-              )),
-          child: IconButton(
-            alignment: Alignment.topLeft,
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-        ),
-        
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: SizedBox(
-            width: 150,
-            height: 150,
-            child: Stack(
-              fit: StackFit.expand,
+              );
+            }).toList(),
+            Row(
               children: [
-                Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.black,
-                    shape: BoxShape.circle,
-                    ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                    child: Container(
-                      margin: const EdgeInsets.all(8.0),
-                      decoration: const BoxDecoration(
-                          color: Colors.green, shape: BoxShape.circle),
-                    ),
+                Expanded(
+                  child: TextFormField(
+                    controller: _commandController,
+                    decoration: InputDecoration(hintText: 'Enter new command'),
                   ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.add),
+                  onPressed: () {
+                    if (_commandController.text.isNotEmpty) {
+                      setState(() {
+                        widget.commands.add(_commandController.text);
+                        _commandController.clear();
+                      });
+                    }
+                  },
                 ),
               ],
             ),
-          ),
-        )
-      ],
+            SizedBox(height: 16),
+            Text(
+              'Version:',
+              style: Theme.of(context).textTheme.subtitle1,
+            ),
+            TextFormField(
+              controller: _versionController,
+            ),
+          ],
+           ),
+      ),
     );
   }
 }
